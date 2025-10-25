@@ -1,0 +1,3141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microsoft To Do</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Windows 11 风格的自定义样式 */
+        :root {
+            --windows-blue: #0078d4;
+            --windows-blue-hover: #106ebe;
+            --windows-bg: #f3f3f3;
+            --windows-surface: #ffffff;
+            --windows-border: #e1e1e1;
+            --windows-text: #323130;
+            --windows-text-secondary: #605e5c;
+        }
+
+
+        /* 深色主题变量 */
+        [data-theme="dark"] {
+            --windows-blue: #4080ff;
+            --windows-blue-hover: #5090ff;
+            --windows-bg: #202020;
+            --windows-surface: #2d2d2d;
+            --windows-border: #404040;
+            --windows-text: #ffffff;
+            --windows-text-secondary: #cccccc;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--windows-bg);
+            color: var(--windows-text);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .windows-card {
+            background: var(--windows-surface);
+            border: 1px solid var(--windows-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .windows-button {
+            background: var(--windows-blue);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .windows-button:hover {
+            background: var(--windows-blue-hover);
+        }
+
+        .windows-button-secondary {
+            background: transparent;
+            color: var(--windows-text);
+            border: 1px solid var(--windows-border);
+        }
+
+        .windows-button-secondary:hover {
+            background: var(--windows-bg);
+        }
+
+        .sidebar-item {
+            transition: background-color 0.2s;
+            cursor: pointer;
+            border-radius: 4px;
+            margin: 2px 8px;
+            padding: 8px 16px;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(0, 120, 212, 0.1);
+        }
+
+        .sidebar-item.active {
+            background: rgba(0, 120, 212, 0.15);
+            color: var(--windows-blue);
+            font-weight: 600;
+        }
+
+        .task-item {
+            transition: all 0.2s;
+            cursor: pointer;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 8px;
+            background: var(--windows-surface);
+            border: 1px solid var(--windows-border);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-item:hover {
+            background: rgba(0, 120, 212, 0.02);
+            border-color: rgba(0, 120, 212, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 120, 212, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .task-item.completed {
+            opacity: 0.7;
+            background: rgba(0, 0, 0, 0.02);
+        }
+
+        .task-item.completed .task-title {
+            text-decoration: line-through;
+            color: var(--windows-text-secondary);
+        }
+
+        .task-checkbox {
+            width: 22px;
+            height: 22px;
+            border: 2px solid var(--windows-border);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-right: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 初始状态：显示加号 */
+        .task-checkbox::before {
+            content: '+';
+            color: var(--windows-text-secondary);
+            font-size: 16px;
+            font-weight: 300;
+            position: absolute;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+
+        /* 悬停时：加号动画并变成圆圈 */
+        .task-checkbox:hover {
+            border-color: var(--windows-blue);
+            background: rgba(0, 120, 212, 0.05);
+            transform: scale(1.1);
+        }
+
+        .task-checkbox:hover::before {
+            opacity: 0;
+            transform: scale(0.5) rotate(180deg);
+        }
+
+        /* 悬停时显示圆圈边框动画 */
+        .task-checkbox::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border: 2px solid var(--windows-blue);
+            border-radius: 50%;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .task-checkbox:hover::after {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 选中状态 */
+        .task-checkbox.checked {
+            background: var(--windows-blue);
+            border-color: var(--windows-blue);
+        }
+
+        .task-checkbox.checked::before {
+            content: '✓';
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+
+        .task-checkbox.checked::after {
+            opacity: 0;
+        }
+
+        /* 点击时的动画 */
+        .task-checkbox:active {
+            transform: scale(0.95);
+        }
+
+        .task-checkbox.checked:active {
+            transform: scale(0.95);
+            background: var(--windows-blue-hover);
+        }
+
+        .priority-indicator {
+            width: 4px;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-radius: 8px 0 0 8px;
+        }
+
+        .priority-high { background: #d13438; }
+        .priority-medium { background: #ff8c00; }
+        .priority-low { background: #107c10; }
+
+        .important-star {
+            color: #ff8c00;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            padding: 4px;
+            border-radius: 4px;
+        }
+
+        .important-star:hover {
+            transform: scale(1.2);
+            background: rgba(255, 140, 0, 0.1);
+        }
+
+        .important-star.fas {
+            color: #ff8c00;
+        }
+
+        .important-star.far {
+            color: var(--windows-text-secondary);
+        }
+
+        /* 任务标题样式优化 */
+        .task-title {
+            font-size: 15px;
+            font-weight: 500;
+            line-height: 1.4;
+            color: var(--windows-text);
+            margin-bottom: 4px;
+        }
+
+        /* 任务描述样式 */
+        .task-description {
+            font-size: 13px;
+            color: var(--windows-text-secondary);
+            line-height: 1.3;
+            margin-top: 6px;
+        }
+
+        /* 任务元信息样式 */
+        .task-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .task-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: var(--windows-text-secondary);
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .task-meta-item.overdue {
+            color: #d13438;
+            background: rgba(209, 52, 56, 0.1);
+        }
+
+        .task-meta-item.important {
+            color: #ff8c00;
+            background: rgba(255, 140, 0, 0.1);
+        }
+
+        /* 任务操作按钮样式 */
+        .task-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .task-item:hover .task-actions {
+            opacity: 1;
+        }
+
+        .task-action-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: transparent;
+            color: var(--windows-text-secondary);
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .task-action-btn:hover {
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--windows-blue);
+        }
+
+        .task-action-btn.delete:hover {
+            background: rgba(209, 52, 56, 0.1);
+            color: #d13438;
+        }
+
+        .search-input {
+            background: var(--windows-surface);
+            border: 1px solid var(--windows-border);
+            border-radius: 4px;
+            padding: 8px 12px 8px 40px;
+            width: 100%;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus {
+            border-color: var(--windows-blue);
+        }
+
+        .add-task-input {
+            background: transparent;
+            border: none;
+            outline: none;
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 16px;
+            color: var(--windows-text);
+        }
+
+        .add-task-input::placeholder {
+            color: var(--windows-text-secondary);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-backdrop {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.show .modal-backdrop {
+            opacity: 1;
+        }
+
+        .task-edit-panel {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 480px;
+            height: 100%;
+            background: var(--windows-surface);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            z-index: 1001;
+            opacity: 0;
+        }
+
+        .modal.show .task-edit-panel {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .task-edit-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid var(--windows-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--windows-surface);
+            animation: slideDownHeader 0.5s ease-out 0.2s both;
+        }
+
+        .task-edit-content {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            background: var(--windows-surface);
+            animation: fadeInContent 0.6s ease-out 0.3s both;
+        }
+
+        @keyframes slideDownHeader {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInContent {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+
+        /* 深色主题适配 */
+        [data-theme="dark"] .task-edit-panel {
+            background: var(--windows-surface);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="dark"] .task-edit-header {
+            background: var(--windows-surface);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .task-edit-content {
+            background: var(--windows-surface);
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--windows-blue), #106ebe);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+        }
+
+        .loading-spinner {
+            border: 2px solid var(--windows-border);
+            border-top: 2px solid var(--windows-blue);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 列表切换时的从上到下过渡效果 */
+        .slide-down {
+            animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                max-height: 1000px;
+            }
+        }
+
+        /* 任务项的渐进式显示 */
+        .task-item-enter {
+            animation: taskItemEnter 0.3s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes taskItemEnter {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* 为任务项添加延迟动画 */
+        .task-item-stagger-1 { animation-delay: 0.05s; }
+        .task-item-stagger-2 { animation-delay: 0.1s; }
+        .task-item-stagger-3 { animation-delay: 0.15s; }
+        .task-item-stagger-4 { animation-delay: 0.2s; }
+        .task-item-stagger-5 { animation-delay: 0.25s; }
+        .task-item-stagger-6 { animation-delay: 0.3s; }
+        .task-item-stagger-7 { animation-delay: 0.35s; }
+        .task-item-stagger-8 { animation-delay: 0.4s; }
+
+        /* 深色主题特定样式 */
+        [data-theme="dark"] .bg-white {
+            background-color: var(--windows-surface) !important;
+        }
+
+        [data-theme="dark"] .border-gray-200 {
+            border-color: var(--windows-border) !important;
+        }
+
+        [data-theme="dark"] .text-gray-600 {
+            color: var(--windows-text-secondary) !important;
+        }
+
+        [data-theme="dark"] .text-gray-500 {
+            color: var(--windows-text-secondary) !important;
+        }
+
+        [data-theme="dark"] .text-gray-400 {
+            color: var(--windows-text-secondary) !important;
+        }
+
+        [data-theme="dark"] .text-gray-300 {
+            color: var(--windows-text-secondary) !important;
+        }
+
+        [data-theme="dark"] .border-gray-300 {
+            border-color: var(--windows-border) !important;
+        }
+
+        [data-theme="dark"] .bg-gray-50 {
+            background-color: var(--windows-surface) !important;
+        }
+
+        [data-theme="dark"] .hover\\:bg-gray-50:hover {
+            background-color: var(--windows-bg) !important;
+        }
+
+        [data-theme="dark"] .hover\\:text-gray-600:hover {
+            color: var(--windows-text) !important;
+        }
+
+        [data-theme="dark"] .hover\\:text-gray-700:hover {
+            color: var(--windows-text) !important;
+        }
+
+        [data-theme="dark"] .hover\\:text-red-500:hover {
+            color: #ff6b6b !important;
+        }
+
+        [data-theme="dark"] .ring-blue-500:focus {
+            --tw-ring-color: var(--windows-blue) !important;
+        }
+
+        [data-theme="dark"] .border-green-100 {
+            border-color: rgba(16, 124, 16, 0.3) !important;
+        }
+
+        [data-theme="dark"] .text-green-800 {
+            color: #4ade80 !important;
+        }
+
+        [data-theme="dark"] .text-green-600 {
+            color: #4ade80 !important;
+        }
+
+        [data-theme="dark"] .text-orange-600 {
+            color: #fb923c !important;
+        }
+
+        [data-theme="dark"] .text-blue-600 {
+            color: #60a5fa !important;
+        }
+
+        /* 圆形按钮样式 */
+        #actionButtonsContainer {
+            position: relative;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--windows-surface);
+            color: var(--windows-text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            z-index: 10;
+        }
+
+        .action-btn:hover {
+            background: var(--windows-blue);
+            color: white;
+            transform: scaleX(1.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 悬停时的挤压效果 */
+        #actionButtonsContainer:hover .action-btn:not(:hover) {
+            transform: scale(0.8);
+            opacity: 0.7;
+        }
+
+        /* 第一个按钮悬停时的特殊效果 */
+        #actionButtonsContainer:hover #newListBtn:hover ~ .action-btn {
+            transform: translateX(20px) scale(0.8);
+            opacity: 0.7;
+        }
+
+        /* 第二个按钮悬停时的特殊效果 */
+        #actionButtonsContainer:hover #newTaskBtn:hover {
+            z-index: 11;
+        }
+
+        #actionButtonsContainer:hover #newTaskBtn:hover ~ .action-btn {
+            transform: translateX(20px) scale(0.8);
+            opacity: 0.7;
+        }
+
+        /* 第三个按钮悬停时的特殊效果 */
+        #actionButtonsContainer:hover #moreBtn:hover {
+            z-index: 11;
+        }
+
+        /* 更多菜单样式 */
+        .more-menu {
+            position: absolute;
+            right: 60px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: var(--windows-surface);
+            border: 1px solid var(--windows-border);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 180px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-50%) translateX(10px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 20;
+        }
+
+        .more-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(-50%) translateX(0);
+        }
+
+        .more-menu-item {
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border-bottom: 1px solid var(--windows-border);
+            color: var(--windows-text);
+        }
+
+        .more-menu-item:last-child {
+            border-bottom: none;
+        }
+
+        .more-menu-item:hover {
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--windows-blue);
+        }
+
+        .more-menu-item i {
+            width: 16px;
+            text-align: center;
+        }
+
+        .more-menu-item span {
+            font-size: 14px;
+        }
+
+        /* 深色主题下的圆形按钮 */
+        [data-theme="dark"] .action-btn {
+            background: var(--windows-surface);
+            color: var(--windows-text);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        [data-theme="dark"] .action-btn:hover {
+            background: var(--windows-blue);
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="dark"] .more-menu {
+            background: var(--windows-surface);
+            border-color: var(--windows-border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="dark"] .more-menu-item {
+            border-bottom-color: var(--windows-border);
+            color: var(--windows-text);
+        }
+
+        [data-theme="dark"] .more-menu-item:hover {
+            background: rgba(64, 128, 255, 0.2);
+            color: var(--windows-blue);
+        }
+
+        /* 开关按钮样式 */
+        .toggle-checkbox {
+            appearance: none;
+            width: 48px;
+            height: 24px;
+            background: #ccc;
+            border-radius: 12px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .toggle-checkbox:checked {
+            background: var(--windows-blue);
+        }
+
+        .toggle-checkbox::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-checkbox:checked::before {
+            transform: translateX(24px);
+        }
+
+        .toggle-checkbox:hover {
+            opacity: 0.8;
+        }
+
+        /* 深色主题下的开关按钮 */
+        [data-theme="dark"] .toggle-checkbox {
+            background: #555;
+        }
+
+        [data-theme="dark"] .toggle-checkbox:checked {
+            background: var(--windows-blue);
+        }
+
+        [data-theme="dark"] .toggle-checkbox::before {
+            background: white;
+        }
+
+        /* 图标选择样式 */
+        .icon-option {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--windows-border);
+            border-radius: 8px;
+            background: var(--windows-surface);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-option:hover {
+            border-color: var(--windows-blue);
+            background: rgba(0, 120, 212, 0.1);
+            transform: scale(1.05);
+        }
+
+        .icon-option.selected {
+            border-color: var(--windows-blue);
+            background: rgba(0, 120, 212, 0.2);
+            box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.3);
+        }
+
+        [data-theme="dark"] .icon-option {
+            border-color: var(--windows-border);
+            background: var(--windows-surface);
+        }
+
+        [data-theme="dark"] .icon-option:hover {
+            border-color: var(--windows-blue);
+            background: rgba(64, 128, 255, 0.2);
+        }
+
+        [data-theme="dark"] .icon-option.selected {
+            border-color: var(--windows-blue);
+            background: rgba(64, 128, 255, 0.3);
+            box-shadow: 0 0 0 2px rgba(64, 128, 255, 0.4);
+        }
+
+        /* AI助手样式 */
+        .ai-assistant-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--windows-blue), #4080ff);
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-assistant-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.4);
+        }
+
+        .ai-assistant-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ai-assistant-btn::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: all 0.5s;
+        }
+
+        .ai-assistant-btn:hover::before {
+            animation: aiShine 0.5s ease-in-out;
+        }
+
+        @keyframes aiShine {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+        }
+
+        .ai-assistant-panel {
+            position: absolute;
+            bottom: 80px;
+            right: 0;
+            width: 380px;
+            height: 500px;
+            background: var(--windows-surface);
+            border: 1px solid var(--windows-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .ai-assistant-panel.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .ai-assistant-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--windows-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ai-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--windows-blue), #4080ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 2px 8px rgba(0, 120, 212, 0.3);
+        }
+
+        .ai-assistant-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--windows-text);
+            margin: 0;
+        }
+
+        .ai-assistant-status {
+            font-size: 14px;
+            color: var(--windows-text-secondary);
+            margin: 0;
+        }
+
+        .ai-close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--windows-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .ai-close-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: var(--windows-text);
+        }
+
+        .ai-clear-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--windows-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .ai-clear-btn:hover {
+            background: rgba(209, 52, 56, 0.1);
+            color: #d13438;
+        }
+
+        .ai-chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .ai-message {
+            display: flex;
+            gap: 12px;
+            max-width: 100%;
+        }
+
+        .ai-message-user {
+            flex-direction: row-reverse;
+        }
+
+        .ai-avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--windows-blue), #4080ff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .ai-message-user .ai-avatar-small {
+            background: var(--windows-text);
+        }
+
+        .ai-message-content {
+            background: var(--windows-bg);
+            padding: 12px 16px;
+            border-radius: 16px;
+            color: var(--windows-text);
+            font-size: 14px;
+            line-height: 1.5;
+            max-width: 280px;
+        }
+
+        .ai-message-user .ai-message-content {
+            background: var(--windows-blue);
+            color: white;
+        }
+
+        .ai-suggestions {
+            list-style: none;
+            padding: 0;
+            margin: 8px 0;
+        }
+
+        .ai-suggestions li {
+            padding: 4px 0;
+            position: relative;
+            padding-left: 16px;
+        }
+
+        .ai-suggestions li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--windows-blue);
+        }
+
+        .ai-message-user .ai-suggestions li::before {
+            color: white;
+        }
+
+        .ai-input-area {
+            padding: 20px;
+            border-top: 1px solid var(--windows-border);
+        }
+
+        .ai-input-container {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .ai-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--windows-border);
+            border-radius: 24px;
+            background: var(--windows-bg);
+            color: var(--windows-text);
+            font-size: 14px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .ai-input:focus {
+            border-color: var(--windows-blue);
+            box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
+        }
+
+        .ai-send-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--windows-blue);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .ai-send-btn:hover {
+            background: var(--windows-blue-hover);
+            transform: scale(1.05);
+        }
+
+        .ai-send-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ai-voice-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: var(--windows-bg);
+            color: var(--windows-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            border: 1px solid var(--windows-border);
+        }
+
+        .ai-voice-btn:hover {
+            background: var(--windows-blue);
+            color: white;
+            border-color: var(--windows-blue);
+            transform: scale(1.05);
+        }
+
+        .ai-voice-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ai-voice-btn.recording {
+            background: #d13438;
+            color: white;
+            border-color: #d13438;
+            animation: voiceRecording 1.5s ease-in-out infinite;
+        }
+
+        @keyframes voiceRecording {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .ai-quick-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .ai-quick-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--windows-border);
+            border-radius: 8px;
+            background: var(--windows-bg);
+            color: var(--windows-text);
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+
+        .ai-quick-btn:hover {
+            background: var(--windows-blue);
+            color: white;
+            border-color: var(--windows-blue);
+            transform: translateY(-1px);
+        }
+
+        /* AI助手深色主题 */
+        [data-theme="dark"] .ai-assistant-panel {
+            background: var(--windows-surface);
+            border-color: var(--windows-border);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="dark"] .ai-assistant-header {
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .ai-message-content {
+            background: var(--windows-bg);
+            color: var(--windows-text);
+        }
+
+        [data-theme="dark"] .ai-input {
+            background: var(--windows-bg);
+            border-color: var(--windows-border);
+            color: var(--windows-text);
+        }
+
+        [data-theme="dark"] .ai-quick-btn {
+            background: var(--windows-bg);
+            border-color: var(--windows-border);
+            color: var(--windows-text);
+        }
+
+        /* AI助手打字动画 */
+        .ai-typing {
+            display: inline-block;
+        }
+
+        .ai-typing::after {
+            content: '...';
+            animation: aiTyping 1.4s infinite;
+        }
+
+        @keyframes aiTyping {
+            0% { content: '.'; }
+            33% { content: '..'; }
+            66% { content: '...'; }
+            100% { content: '.'; }
+        }
+
+        /* AI助手消息进入动画 */
+        .ai-message-enter {
+            animation: aiMessageEnter 0.3s ease-out;
+        }
+
+        @keyframes aiMessageEnter {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* AI助手按钮拖动功能 */
+        .ai-assistant-btn.draggable {
+            cursor: move;
+        }
+
+        .ai-assistant-btn.dragging {
+            opacity: 0.8;
+            transform: scale(1.1);
+            z-index: 9999;
+        }
+
+        /* 拖动时的阴影效果 */
+        .ai-assistant-btn.dragging {
+            box-shadow: 0 8px 32px rgba(0, 120, 212, 0.6);
+        }
+
+        /* 防止拖动时选中文本 */
+        .ai-assistant-btn.dragging {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        /* 拖动边界指示器 */
+        .drag-boundary {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 9998;
+        }
+
+        .drag-boundary.active {
+            border: 2px dashed var(--windows-blue);
+            opacity: 0.3;
+        }
+
+        /* 表单元素动画效果 */
+        .task-edit-content .mb-4 {
+            animation: slideInFormElement 0.5s ease-out both;
+        }
+
+        .task-edit-content .mb-4:nth-child(1) { animation-delay: 0.4s; }
+        .task-edit-content .mb-4:nth-child(2) { animation-delay: 0.5s; }
+        .task-edit-content .mb-4:nth-child(3) { animation-delay: 0.6s; }
+        .task-edit-content .mb-4:nth-child(4) { animation-delay: 0.7s; }
+        .task-edit-content .mb-6 { animation-delay: 0.8s; }
+
+        @keyframes slideInFormElement {
+            from {
+                opacity: 0;
+                transform: translateX(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* 表单输入框聚焦动画 */
+        .task-edit-content input,
+        .task-edit-content textarea,
+        .task-edit-content select {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        .task-edit-content input:focus,
+        .task-edit-content textarea:focus,
+        .task-edit-content select:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 120, 212, 0.15);
+        }
+
+        /* 按钮悬停动画 */
+        .task-edit-content button {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-edit-content button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .task-edit-content button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .task-edit-content button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.3);
+        }
+
+        .task-edit-content button:active {
+            transform: translateY(0);
+        }
+
+        /* 标签动画 */
+        .task-edit-content label {
+            transition: all 0.2s ease;
+        }
+
+        .task-edit-content input:focus + label,
+        .task-edit-content textarea:focus + label,
+        .task-edit-content select:focus + label {
+            color: var(--windows-blue);
+            transform: translateX(2px);
+        }
+
+        /* 复选框动画 */
+        .task-edit-content input[type="checkbox"] {
+            transition: all 0.2s ease;
+        }
+
+        .task-edit-content input[type="checkbox"]:checked {
+            animation: checkboxPop 0.3s ease;
+        }
+
+        @keyframes checkboxPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* 关闭按钮动画 */
+        .task-edit-header button {
+            transition: all 0.2s ease;
+        }
+
+        .task-edit-header button:hover {
+            transform: rotate(90deg);
+            color: var(--windows-blue);
+        }
+
+        /* 模态框背景动画增强 */
+        .modal-backdrop {
+            backdrop-filter: blur(0px);
+            transition: all 0.4s ease;
+        }
+
+        .modal.show .modal-backdrop {
+            backdrop-filter: blur(4px);
+        }
+
+        /* 通用模态框内容动画 */
+        .modal-content {
+            background: var(--windows-surface);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            transform: scale(0.9) translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .modal.show .modal-content {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+
+        /* 新建列表和AI配置模态框特殊样式 */
+        #newListModal,
+        #aiConfigModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        #newListModal.show,
+        #aiConfigModal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+
+        /* 通知提示动画优化 */
+        #notification {
+            transform: translateY(100px) scale(0.8);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        #notification.fade-in {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+        }
+
+        /* 图标选择动画增强 */
+        .icon-option {
+            width: 50px;
+            height: 50px;
+            border: 2px solid var(--windows-border);
+            border-radius: 8px;
+            background: var(--windows-surface);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .icon-option::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(0, 120, 212, 0.1);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.4s, height 0.4s;
+        }
+
+        .icon-option:hover::before {
+            width: 100px;
+            height: 100px;
+        }
+
+        .icon-option:hover {
+            border-color: var(--windows-blue);
+            transform: scale(1.1) translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 120, 212, 0.2);
+        }
+
+        .icon-option.selected {
+            border-color: var(--windows-blue);
+            background: rgba(0, 120, 212, 0.1);
+            transform: scale(1.05);
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.3);
+        }
+
+        .icon-option.selected::after {
+            content: '✓';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 20px;
+            height: 20px;
+            background: var(--windows-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            animation: iconCheckPop 0.3s ease;
+        }
+
+        @keyframes iconCheckPop {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        /* 日历周视图样式 */
+        .calendar-week-header {
+            background: var(--windows-surface);
+            border: 1px solid var(--windows-border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-week-grid {
+            background: var(--windows-surface);
+            border: 1px solid var(--windows-border);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .calendar-weekdays {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            background: var(--windows-bg);
+            border-bottom: 1px solid var(--windows-border);
+        }
+
+        .calendar-weekday {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--windows-text);
+            border-right: 1px solid var(--windows-border);
+            font-size: 14px;
+        }
+
+        .calendar-weekday:last-child {
+            border-right: none;
+        }
+
+        /* 时间轴视图样式 */
+        .calendar-timeline-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 600px;
+            position: relative;
+            width: 100%;
+        }
+
+        .calendar-weekdays {
+            display: flex;
+            background: var(--windows-bg);
+            border-bottom: 1px solid var(--windows-border);
+            flex-shrink: 0;
+            min-height: 60px;
+        }
+
+        .calendar-weekday {
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            color: var(--windows-text);
+            border-right: 1px solid var(--windows-border);
+            font-size: 14px;
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .calendar-weekday:first-child {
+            width: 80px;
+            flex: none;
+            flex-shrink: 0;
+        }
+
+        .calendar-weekday:last-child {
+            border-right: none;
+        }
+
+        .calendar-timeline-body {
+            display: flex;
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .calendar-time-labels {
+            flex-shrink: 0;
+            width: 80px;
+            background: var(--windows-bg);
+            border-right: 1px solid var(--windows-border);
+            z-index: 10;
+        }
+
+        .calendar-time-label {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: var(--windows-text-secondary);
+            border-bottom: 1px solid var(--windows-border);
+        }
+
+        .calendar-day-columns {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .calendar-day-column {
+            flex: 1;
+            border-right: 1px solid var(--windows-border);
+            position: relative;
+            min-height: 600px;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .calendar-day-column:last-child {
+            border-right: none;
+        }
+
+        .calendar-day-today {
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--windows-blue);
+        }
+
+        .calendar-time-slots {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .calendar-time-slot {
+            height: 60px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            position: relative;
+        }
+
+        .calendar-task-block {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            background: var(--windows-blue);
+            color: white;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 12px;
+            cursor: move;
+            transition: all 0.2s;
+            z-index: 20;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .calendar-task-block:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 25;
+        }
+
+        .calendar-task-block.dragging {
+            opacity: 0.8;
+            z-index: 30;
+            cursor: grabbing;
+        }
+
+        .calendar-task-block.priority-high {
+            background: #d13438;
+        }
+
+        .calendar-task-block.priority-medium {
+            background: #ff8c00;
+        }
+
+        .calendar-task-block.priority-low {
+            background: #107c10;
+        }
+
+        .calendar-task-block.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .calendar-task-time {
+            font-weight: 600;
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .calendar-task-title {
+            font-weight: 500;
+        }
+
+        /* 宫格视图样式 */
+        .calendar-grid-container {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background: var(--windows-border);
+            border: 1px solid var(--windows-border);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .calendar-grid-day {
+            background: var(--windows-surface);
+            min-height: 400px;
+            padding: 8px;
+        }
+
+        .calendar-grid-day-header {
+            font-weight: 600;
+            color: var(--windows-text);
+            margin-bottom: 8px;
+            padding: 4px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .calendar-grid-day-today {
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--windows-blue);
+        }
+
+        .calendar-grid-tasks {
+            space-y: 2px;
+        }
+
+        .calendar-grid-task {
+            background: var(--windows-bg);
+            border: 1px solid var(--windows-border);
+            border-radius: 4px;
+            padding: 4px 6px;
+            margin-bottom: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .calendar-grid-task:hover {
+            background: rgba(0, 120, 212, 0.1);
+            border-color: var(--windows-blue);
+            transform: translateY(-1px);
+        }
+
+        .calendar-grid-task.priority-high {
+            border-left: 3px solid #d13438;
+        }
+
+        .calendar-grid-task.priority-medium {
+            border-left: 3px solid #ff8c00;
+        }
+
+        .calendar-grid-task.priority-low {
+            border-left: 3px solid #107c10;
+        }
+
+        .calendar-grid-task.completed {
+            opacity: 0.6;
+            text-decoration: line-through;
+        }
+
+        .calendar-grid-task-time {
+            font-weight: 600;
+            color: var(--windows-text-secondary);
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        .calendar-grid-task-title {
+            color: var(--windows-text);
+            line-height: 1.3;
+        }
+
+        /* 拖拽辅助线 */
+        .calendar-drop-zone {
+            position: absolute;
+            background: rgba(0, 120, 212, 0.1);
+            border: 2px dashed var(--windows-blue);
+            border-radius: 4px;
+            pointer-events: none;
+            z-index: 15;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .calendar-drop-zone.active {
+            opacity: 1;
+        }
+
+        /* 视图切换按钮样式 */
+        .calendar-view-btn {
+            transition: all 0.2s;
+        }
+
+        .calendar-view-btn.active {
+            background: var(--windows-blue);
+            color: white;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .calendar-week-header {
+                padding: 12px 16px;
+            }
+
+            .calendar-week-header .flex {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .calendar-timeline-container {
+                grid-template-columns: 60px repeat(7, 1fr);
+                min-height: 400px;
+            }
+
+            .calendar-time-slot {
+                height: 40px;
+            }
+
+            .calendar-task-block {
+                font-size: 11px;
+                padding: 3px 6px;
+            }
+
+            .calendar-grid-container {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar-grid-day {
+                min-height: 200px;
+            }
+        }
+
+        /* 深色主题适配 */
+        [data-theme="dark"] .calendar-week-header {
+            background: var(--windows-surface);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-week-grid {
+            background: var(--windows-surface);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-weekdays {
+            background: var(--windows-bg);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-weekday {
+            color: var(--windows-text);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-time-labels {
+            background: var(--windows-bg);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-time-label {
+            color: var(--windows-text-secondary);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-day-column {
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-day-header {
+            background: var(--windows-bg);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-time-slot {
+            border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        [data-theme="dark"] .calendar-grid-container {
+            background: var(--windows-border);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-grid-day {
+            background: var(--windows-surface);
+        }
+
+        [data-theme="dark"] .calendar-grid-task {
+            background: var(--windows-bg);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .calendar-grid-task:hover {
+            background: rgba(64, 128, 255, 0.2);
+            border-color: var(--windows-blue);
+        }
+
+        [data-theme="dark"] .calendar-grid-task-time {
+            color: var(--windows-text-secondary);
+        }
+
+        [data-theme="dark"] .calendar-grid-task-title {
+            color: var(--windows-text);
+        }
+
+        /* 滑动式侧边栏样式 */
+        .sliding-sidebar {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 380px;
+            height: 100vh;
+            background: var(--windows-surface);
+            border-left: 1px solid var(--windows-border);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sliding-sidebar.show {
+            right: 0;
+        }
+
+        .sliding-sidebar-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--windows-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--windows-surface);
+            flex-shrink: 0;
+        }
+
+        .sliding-sidebar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--windows-text);
+            margin: 0;
+            display: flex;
+            align-items: center;
+        }
+
+        .sliding-sidebar-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--windows-text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 16px;
+        }
+
+        .sliding-sidebar-close:hover {
+            background: rgba(0, 0, 0, 0.1);
+            color: var(--windows-text);
+            transform: rotate(90deg);
+        }
+
+        .sliding-sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0;
+            background: var(--windows-surface);
+        }
+
+        .sidebar-section {
+            border-bottom: 1px solid var(--windows-border);
+            padding: 20px 0;
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--windows-text-secondary);
+            margin: 0 0 16px 0;
+            padding: 0 24px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-section-items {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .sidebar-item-slide {
+            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            color: var(--windows-text);
+        }
+
+        .sidebar-item-slide:hover {
+            background: rgba(0, 120, 212, 0.1);
+            color: var(--windows-blue);
+            transform: translateX(-4px);
+        }
+
+        .sidebar-item-slide:active {
+            transform: translateX(-2px);
+        }
+
+        .sidebar-item-slide i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-item-slide span {
+            font-size: 14px;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .sidebar-item-desc {
+            font-size: 12px;
+            color: var(--windows-text-secondary);
+            margin-top: 2px;
+            display: block;
+            line-height: 1.3;
+        }
+
+        .sidebar-item-slide:hover .sidebar-item-desc {
+            color: var(--windows-blue);
+        }
+
+        /* 滑动侧边栏进入动画 */
+        .sliding-sidebar {
+            animation: slideInFromRight 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .sliding-sidebar.show {
+            animation: slideInFromRightShow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        @keyframes slideInFromRightShow {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* 滑动侧边栏退出动画 */
+        .sliding-sidebar:not(.show) {
+            animation: slideOutToRight 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideOutToRight {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* 功能项的渐进式动画 */
+        .sidebar-section {
+            animation: fadeInSection 0.5s ease-out both;
+        }
+
+        .sidebar-section:nth-child(1) { animation-delay: 0.1s; }
+        .sidebar-section:nth-child(2) { animation-delay: 0.2s; }
+        .sidebar-section:nth-child(3) { animation-delay: 0.3s; }
+        .sidebar-section:nth-child(4) { animation-delay: 0.4s; }
+        .sidebar-section:nth-child(5) { animation-delay: 0.5s; }
+
+        @keyframes fadeInSection {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 功能项的悬停效果 */
+        .sidebar-item-slide::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 3px;
+            background: var(--windows-blue);
+            transform: scaleY(0);
+            transition: transform 0.2s;
+            border-radius: 0 2px 2px 0;
+        }
+
+        .sidebar-item-slide:hover::before {
+            transform: scaleY(1);
+        }
+
+        /* 深色主题适配 */
+        [data-theme="dark"] .sliding-sidebar {
+            background: var(--windows-surface);
+            border-color: var(--windows-border);
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.4);
+        }
+
+        [data-theme="dark"] .sliding-sidebar-header {
+            background: var(--windows-surface);
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .sliding-sidebar-content {
+            background: var(--windows-surface);
+        }
+
+        [data-theme="dark"] .sidebar-section {
+            border-color: var(--windows-border);
+        }
+
+        [data-theme="dark"] .sidebar-section-title {
+            color: var(--windows-text-secondary);
+        }
+
+        [data-theme="dark"] .sidebar-item-slide {
+            color: var(--windows-text);
+        }
+
+        [data-theme="dark"] .sidebar-item-slide:hover {
+            background: rgba(64, 128, 255, 0.2);
+            color: var(--windows-blue);
+        }
+
+        [data-theme="dark"] .sidebar-item-desc {
+            color: var(--windows-text-secondary);
+        }
+
+        [data-theme="dark"] .sidebar-item-slide:hover .sidebar-item-desc {
+            color: var(--windows-blue);
+        }
+
+        [data-theme="dark"] .sidebar-item-slide::before {
+            background: var(--windows-blue);
+        }
+
+        [data-theme="dark"] .sliding-sidebar-close {
+            color: var(--windows-text-secondary);
+        }
+
+        [data-theme="dark"] .sliding-sidebar-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--windows-text);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .sliding-sidebar {
+                width: 100vw;
+                right: -100vw;
+            }
+
+            .sliding-sidebar.show {
+                right: 0;
+            }
+
+            .sidebar-item-slide {
+                padding: 20px 24px;
+            }
+
+            .sidebar-section-title {
+                padding: 0 24px;
+                font-size: 13px;
+            }
+
+            .sidebar-item-slide span {
+                font-size: 16px;
+            }
+
+            .sidebar-item-desc {
+                font-size: 13px;
+            }
+        }
+
+        /* 滚动条样式 */
+        .sliding-sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sliding-sidebar-content::-webkit-scrollbar-track {
+            background: var(--windows-bg);
+        }
+
+        .sliding-sidebar-content::-webkit-scrollbar-thumb {
+            background: var(--windows-border);
+            border-radius: 3px;
+        }
+
+        .sliding-sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: var(--windows-text-secondary);
+        }
+
+        /* 遮罩层 */
+        .sliding-sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sliding-sidebar-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        [data-theme="dark"] .sliding-sidebar-overlay {
+            background: rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+<body class="h-screen overflow-hidden">
+    
+    <div class="flex h-full">
+        <!-- 侧边栏 -->
+        <div class="w-64 bg-white border-r border-gray-200 flex flex-col" id="sidebar">
+            <!-- 搜索框 -->
+            <div class="p-4 border-b border-gray-200">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" 
+                           id="searchInput" 
+                           class="search-input" 
+                           placeholder="搜索任务">
+                </div>
+            </div>
+
+            <!-- 新建任务区域 - 三个圆形按钮 -->
+            <div class="p-4 border-b border-gray-200">
+                <div class="flex justify-center items-center h-16 relative" id="actionButtonsContainer">
+                    <!-- 新建列表按钮 -->
+                    <button class="action-btn" id="newListBtn" onclick="showNewListModal()" title="新建列表">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    
+                    <!-- 新建任务按钮 -->
+                    <button class="action-btn" id="newTaskBtn" onclick="showAddTaskModal()" title="新建任务">
+                        <i class="fas fa-plus"></i>
+                    </button>
+                    
+                    <!-- 更多选项按钮 -->
+                    <button class="action-btn" id="moreBtn" onclick="toggleMoreMenu()" title="更多选项">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </button>
+                    
+                    <!-- 滑动式侧边栏 -->
+                    <div class="sliding-sidebar" id="slidingSidebar">
+                        <div class="sliding-sidebar-header">
+                            <h3 class="sliding-sidebar-title">
+                                <i class="fas fa-ellipsis-h mr-2"></i>更多功能
+                            </h3>
+                            <button class="sliding-sidebar-close" onclick="toggleMoreMenu()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="sliding-sidebar-content">
+                            <!-- 功能分组 -->
+                            <div class="sidebar-section">
+                                <h4 class="sidebar-section-title">
+                                    <i class="fas fa-calendar-alt mr-2"></i>视图功能
+                                </h4>
+                                <div class="sidebar-section-items">
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('calendar_week')">
+                                        <i class="fas fa-calendar-week"></i>
+                                        <span>日历周视图</span>
+                                        <small class="sidebar-item-desc">时间轴和宫格视图</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('calendar_month')">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        <span>月视图</span>
+                                        <small class="sidebar-item-desc">月度任务概览</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('kanban')">
+                                        <i class="fas fa-columns"></i>
+                                        <span>看板视图</span>
+                                        <small class="sidebar-item-desc">拖拽式任务管理</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-section">
+                                <h4 class="sidebar-section-title">
+                                    <i class="fas fa-exchange-alt mr-2"></i>数据管理
+                                </h4>
+                                <div class="sidebar-section-items">
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('import')">
+                                        <i class="fas fa-file-import"></i>
+                                        <span>导入任务</span>
+                                        <small class="sidebar-item-desc">从文件导入</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('export')">
+                                        <i class="fas fa-file-export"></i>
+                                        <span>导出任务</span>
+                                        <small class="sidebar-item-desc">导出为多种格式</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('backup')">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <span>数据备份</span>
+                                        <small class="sidebar-item-desc">云端备份恢复</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-section">
+                                <h4 class="sidebar-section-title">
+                                    <i class="fas fa-robot mr-2"></i>AI助手
+                                </h4>
+                                <div class="sidebar-section-items">
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('ai_config')">
+                                        <i class="fas fa-cog"></i>
+                                        <span>AI配置</span>
+                                        <small class="sidebar-item-desc">模型和API设置</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('ai_chat')">
+                                        <i class="fas fa-comments"></i>
+                                        <span>AI聊天</span>
+                                        <small class="sidebar-item-desc">智能任务助手</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('ai_suggestions')">
+                                        <i class="fas fa-lightbulb"></i>
+                                        <span>智能建议</span>
+                                        <small class="sidebar-item-desc">AI任务优化</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-section">
+                                <h4 class="sidebar-section-title">
+                                    <i class="fas fa-cog mr-2"></i>系统设置
+                                </h4>
+                                <div class="sidebar-section-items">
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('settings')">
+                                        <i class="fas fa-sliders-h"></i>
+                                        <span>通用设置</span>
+                                        <small class="sidebar-item-desc">界面和偏好设置</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('themes')">
+                                        <i class="fas fa-palette"></i>
+                                        <span>主题外观</span>
+                                        <small class="sidebar-item-desc">自定义界面样式</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('notifications')">
+                                        <i class="fas fa-bell"></i>
+                                        <span>通知设置</span>
+                                        <small class="sidebar-item-desc">提醒和通知管理</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('shortcuts')">
+                                        <i class="fas fa-keyboard"></i>
+                                        <span>快捷键</span>
+                                        <small class="sidebar-item-desc">键盘快捷方式</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sidebar-section">
+                                <h4 class="sidebar-section-title">
+                                    <i class="fas fa-info-circle mr-2"></i>帮助与支持
+                                </h4>
+                                <div class="sidebar-section-items">
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('help')">
+                                        <i class="fas fa-question-circle"></i>
+                                        <span>使用帮助</span>
+                                        <small class="sidebar-item-desc">功能使用指南</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('feedback')">
+                                        <i class="fas fa-comment-dots"></i>
+                                        <span>意见反馈</span>
+                                        <small class="sidebar-item-desc">提交建议和问题</small>
+                                    </div>
+                                    <div class="sidebar-item-slide" onclick="handleMoreAction('about')">
+                                        <i class="fas fa-info"></i>
+                                        <span>关于应用</span>
+                                        <small class="sidebar-item-desc">版本和版权信息</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="flex-1 overflow-y-auto p-2" id="sidebarNav">
+                <!-- 动态生成的导航项 -->
+            </nav>
+
+            <!-- 底部统计 -->
+            <div class="p-4 border-t border-gray-200">
+                <div class="text-sm text-gray-600" id="statsInfo">
+                    <div class="loading-spinner mx-auto mb-2"></div>
+                    <div class="text-center">加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="flex-1 flex flex-col">
+            <!-- 顶部标题栏 -->
+            <header class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex-1">
+                        <h1 class="text-2xl font-semibold" id="pageTitle">我的一天</h1>
+                        <p class="text-sm text-gray-600 mt-1" id="pageSubtitle">今日任务</p>
+                    </div>
+            <div class="flex items-center space-x-4">
+                        <button class="windows-button-secondary" onclick="toggleShowCompleted()">
+                            <i class="fas fa-eye" id="showCompletedIcon"></i>
+                        </button>
+                        <button class="windows-button-secondary" onclick="toggleTheme()">
+                            <i class="fas fa-moon" id="themeIcon"></i>
+                        </button>
+                        
+                        <!-- 用户菜单 -->
+                        <div class="relative">
+                            <button class="windows-button-secondary" onclick="toggleUserMenu()" id="userMenuBtn">
+                                <i class="fas fa-user" id="userAvatar"></i>
+                            </button>
+                            
+                            <!-- 用户下拉菜单 -->
+                            <div id="userMenu" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50">
+                                <div class="px-4 py-3 border-b border-gray-200">
+                                    <div class="text-sm font-medium text-gray-900" id="userDisplayName">用户</div>
+                                    <div class="text-xs text-gray-500" id="userEmail">user@example.com</div>
+                                </div>
+                                <div class="py-1">
+                                    <a href="#" onclick="showUserProfile()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-user-circle mr-2"></i>个人资料
+                                    </a>
+                                    <a href="#" onclick="showUserSettings()" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-cog mr-2"></i>设置
+                                    </a>
+                                    <div class="border-t border-gray-200"></div>
+                                    <a href="#" onclick="logout()" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                        <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 内容区域 -->
+            <main class="flex-1 overflow-y-auto" id="mainContent">
+                <div class="max-w-4xl mx-auto p-6">
+                    <!-- 添加任务输入框 -->
+                    <div class="windows-card mb-6">
+                        <div class="flex items-center" onclick="addQuickTask()">
+                            <div class="task-checkbox"></div>
+                            <input type="text" 
+                                   id="quickAddInput" 
+                                   class="add-task-input" 
+                                   placeholder="添加任务，按回车确认"
+                                   onkeypress="handleQuickAdd(event)">
+                        </div>
+                    </div>
+
+                    <!-- 任务列表容器 -->
+                    <div id="tasksList" class="space-y-2">
+                        <!-- 动态生成的任务项 -->
+                    </div>
+
+                    <!-- 搜索结果页面 -->
+                    <div id="searchResults" class="hidden fade-in">
+                        <!-- 动态生成的搜索结果 -->
+                    </div>
+
+                    <!-- 日历周视图页面 -->
+                    <div id="calendarWeekView" class="hidden fade-in">
+                        <div class="calendar-week-header">
+                            <div class="flex items-center justify-between mb-4">
+                                <div class="flex items-center space-x-4">
+                                    <button class="windows-button-secondary" onclick="previousWeek()">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </button>
+                                    <h2 class="text-xl font-semibold" id="weekTitle">本周</h2>
+                                    <button class="windows-button-secondary" onclick="nextWeek()">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                    <button class="windows-button-secondary" onclick="goToToday()">
+                                        今天
+                                    </button>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button class="windows-button-secondary" id="timelineViewBtn" onclick="switchCalendarView('timeline')">
+                                        <i class="fas fa-stream"></i> 时间轴
+                                    </button>
+                                    <button class="windows-button-secondary" id="gridViewBtn" onclick="switchCalendarView('grid')">
+                                        <i class="fas fa-th"></i> 宫格
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 时间轴视图 -->
+                        <div id="timelineView" class="calendar-timeline-view">
+                            <div class="calendar-week-grid">
+                                <!-- 时间轴容器 -->
+                                <div class="calendar-timeline-container" id="timelineContainer">
+                                    <!-- 动态生成的时间轴内容 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 宫格视图 -->
+                        <div id="gridView" class="calendar-grid-view hidden">
+                            <div class="calendar-grid-container" id="gridContainer">
+                                <!-- 动态生成的宫格内容 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+        </div>
+    </div>
+
+    <!-- 添加/编辑任务右侧面板 -->
+    <div id="taskModal" class="modal">
+        <div class="modal-backdrop" onclick="hideTaskModal()"></div>
+        <div class="task-edit-panel">
+            <div class="task-edit-header">
+                <h2 class="text-xl font-semibold" id="modalTitle">新建任务</h2>
+                <button onclick="hideTaskModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="task-edit-content">
+                <form id="taskForm" onsubmit="saveTask(event)">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">任务标题</label>
+                        <input type="text" 
+                               id="taskTitle" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">描述</label>
+                        <textarea id="taskDescription" 
+                                  rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">优先级</label>
+                            <select id="taskPriority" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="low">低</option>
+                                <option value="medium" selected>中</option>
+                                <option value="high">高</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">截止日期</label>
+                            <input type="date" 
+                                   id="taskDueDate"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">开始时间</label>
+                            <input type="time" 
+                                   id="taskStartTime"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium mb-2">结束时间</label>
+                            <input type="time" 
+                                   id="taskEndTime"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">任务列表</label>
+                        <select id="taskListId" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <!-- 动态生成的选项 -->
+                        </select>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="taskImportant" class="mr-2">
+                            <span class="text-sm font-medium">标记为重要</span>
+                        </label>
+                    </div>
+
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" 
+                                onclick="hideTaskModal()"
+                                class="windows-button-secondary px-4 py-2">
+                            取消
+                        </button>
+                        <button type="submit" class="windows-button px-4 py-2">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建列表模态框 -->
+    <div id="newListModal" class="modal">
+        <div class="modal-content">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold">新建列表</h2>
+                <button onclick="hideNewListModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="newListForm" onsubmit="saveNewList(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">列表名称</label>
+                    <input type="text" 
+                           id="newListName" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           placeholder="输入列表名称"
+                           required>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium mb-2">选择图标</label>
+                    <div class="grid grid-cols-6 gap-3">
+                        <button type="button" class="icon-option" data-icon="📋" onclick="selectIcon('📋')">
+                            <span class="text-2xl">📋</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="📁" onclick="selectIcon('📁')">
+                            <span class="text-2xl">📁</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="📂" onclick="selectIcon('📂')">
+                            <span class="text-2xl">📂</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🗂️" onclick="selectIcon('🗂️')">
+                            <span class="text-2xl">🗂️</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="📝" onclick="selectIcon('📝')">
+                            <span class="text-2xl">📝</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="📄" onclick="selectIcon('📄')">
+                            <span class="text-2xl">📄</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🏠" onclick="selectIcon('🏠')">
+                            <span class="text-2xl">🏠</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="💼" onclick="selectIcon('💼')">
+                            <span class="text-2xl">💼</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🎯" onclick="selectIcon('🎯')">
+                            <span class="text-2xl">🎯</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="⭐" onclick="selectIcon('⭐')">
+                            <span class="text-2xl">⭐</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🔥" onclick="selectIcon('🔥')">
+                            <span class="text-2xl">🔥</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="💡" onclick="selectIcon('💡')">
+                            <span class="text-2xl">💡</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🎨" onclick="selectIcon('🎨')">
+                            <span class="text-2xl">🎨</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🎵" onclick="selectIcon('🎵')">
+                            <span class="text-2xl">🎵</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🎮" onclick="selectIcon('🎮')">
+                            <span class="text-2xl">🎮</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="📚" onclick="selectIcon('📚')">
+                            <span class="text-2xl">📚</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🛒" onclick="selectIcon('🛒')">
+                            <span class="text-2xl">🛒</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="🚗" onclick="selectIcon('🚗')">
+                            <span class="text-2xl">🚗</span>
+                        </button>
+                        <button type="button" class="icon-option" data-icon="✈️" onclick="selectIcon('✈️')">
+                            <span class="text-2xl">✈️</span>
+                        </button>
+                    </div>
+                    <input type="hidden" id="newListIcon" value="📋">
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" 
+                            onclick="hideNewListModal()"
+                            class="windows-button-secondary px-4 py-2">
+                        取消
+                    </button>
+                    <button type="submit" class="windows-button px-4 py-2">
+                        创建列表
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI助手配置模态框 -->
+    <div id="aiConfigModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-semibold">AI助手配置</h2>
+                <button onclick="hideAIConfigModal()" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="aiConfigForm" onsubmit="saveAIConfig(event)">
+                <!-- 基本设置 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-4">基本设置</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">助手名称</label>
+                        <input type="text" 
+                               id="aiName" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               value="AI助手">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">AI模式</label>
+                        <select id="aiMode" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="smart">智能模式 - 使用AI模型</option>
+                            <option value="local">本地模式 - 基础规则回复</option>
+                            <option value="hybrid">混合模式 - AI优先，本地降级</option>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">选择AI助手的工作模式</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">模型</label>
+                        <div class="flex gap-2">
+                            <select id="aiModel" class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                <option value="gpt-4">GPT-4</option>
+                                <option value="gpt-4-turbo">GPT-4 Turbo</option>
+                                <option value="gpt-4o">GPT-4o</option>
+                                <option value="claude-3-haiku">Claude 3 Haiku</option>
+                                <option value="claude-3-sonnet">Claude 3 Sonnet</option>
+                                <option value="claude-3-opus">Claude 3 Opus</option>
+                                <option value="qwen-plus">通义千问 Plus</option>
+                                <option value="qwen-turbo">通义千问 Turbo</option>
+                                <option value="moonshot-v1-8k">Moonshot 8K</option>
+                                <option value="moonshot-v1-32k">Moonshot 32K</option>
+                                <option value="glm-4">智谱 GLM-4</option>
+                                <option value="deepseek-chat">DeepSeek Chat</option>
+                                <option value="custom">自定义模型</option>
+                            </select>
+                            <input type="text" 
+                                   id="aiCustomModel" 
+                                   class="w-48 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="输入自定义模型"
+                                   style="display: none;">
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">选择预设模型或输入自定义模型名称</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">API提供商</label>
+                        <select id="aiProvider" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="openai">OpenAI</option>
+                            <option value="azure">Azure OpenAI</option>
+                            <option value="anthropic">Anthropic Claude</option>
+                            <option value="alibaba">阿里云通义千问</option>
+                            <option value="moonshot">Moonshot AI</option>
+                            <option value="zhipu">智谱AI</option>
+                            <option value="deepseek">DeepSeek</option>
+                            <option value="custom">自定义</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">API基础URL</label>
+                        <input type="url" 
+                               id="aiApiBase" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="https://api.openai.com/v1"
+                               value="https://api.openai.com/v1">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">API密钥</label>
+                        <input type="password" 
+                               id="aiApiKey" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               placeholder="输入你的API密钥">
+                        <p class="text-xs text-gray-500 mt-1">支持OpenAI兼容的API密钥</p>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">最大令牌数</label>
+                            <input type="number" 
+                                   id="aiMaxTokens" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   value="500"
+                                   min="100"
+                                   max="4000">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">温度</label>
+                            <input type="number" 
+                                   id="aiTemperature" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   value="0.7"
+                                   min="0"
+                                   max="2"
+                                   step="0.1">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 高级设置 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-4">高级设置</h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">系统提示词</label>
+                        <textarea id="aiSystemPrompt" 
+                                  rows="4"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="定义AI助手的角色和行为...">你是一个专业的任务管理AI助手，帮助用户高效管理他们的待办事项。你的任务是：
+1. 帮助用户创建、编辑和管理任务
+2. 提供任务优先级建议
+3. 协助制定时间管理计划
+4. 回答任务管理相关的问题
+5. 提供提高效率的建议
+
+请用友好、专业的语调回复，回复要简洁有用。如果用户询问任务相关的信息，你可以基于当前的任务数据回答。</textarea>
+                        <div class="mt-2 flex justify-end">
+                            <button type="button" onclick="resetToDefaultPrompt()" class="text-sm text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-undo mr-1"></i>恢复默认
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">欢迎消息</label>
+                        <textarea id="aiWelcomeMessage" 
+                                  rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                  placeholder="AI助手的欢迎消息...">你好！我是你的AI助手 👋
+我可以帮助你管理任务，比如：
+• 创建新任务
+• 查找特定任务
+• 管理任务优先级
+• 提供任务建议
+
+有什么可以帮助你的吗？</textarea>
+                        <div class="mt-2 flex justify-end">
+                            <button type="button" onclick="resetToDefaultWelcome()" class="text-sm text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-undo mr-1"></i>恢复默认
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">请求超时(秒)</label>
+                            <input type="number" 
+                                   id="aiTimeout" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   value="30"
+                                   min="5"
+                                   max="120">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">重试次数</label>
+                            <input type="number" 
+                                   id="aiRetries" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   value="3"
+                                   min="1"
+                                   max="5">
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="aiStreamResponse" class="mr-2">
+                            <span class="text-sm font-medium">启用流式响应</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">实时显示AI回复内容，提升用户体验</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="flex items-center">
+                            <input type="checkbox" id="aiSaveHistory" class="mr-2" checked>
+                            <span class="text-sm font-medium">保存对话历史</span>
+                        </label>
+                        <p class="text-xs text-gray-500 mt-1">保存与AI的对话记录，便于后续查看</p>
+                    </div>
+                </div>
+
+                <!-- 功能开关 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-4">功能开关</h3>
+                    
+                    <div class="space-y-3">
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm font-medium">任务创建助手</span>
+                            <input type="checkbox" id="aiTaskCreation" class="toggle-checkbox" checked>
+                        </label>
+                        
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm font-medium">智能任务分类</span>
+                            <input type="checkbox" id="aiTaskCategorization" class="toggle-checkbox" checked>
+                        </label>
+                        
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm font-medium">优先级建议</span>
+                            <input type="checkbox" id="aiPrioritySuggestion" class="toggle-checkbox" checked>
+                        </label>
+                        
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm font-medium">时间管理建议</span>
+                            <input type="checkbox" id="aiTimeManagement" class="toggle-checkbox" checked>
+                        </label>
+                        
+                        <label class="flex items-center justify-between">
+                            <span class="text-sm font-medium">任务总结分析</span>
+                            <input type="checkbox" id="aiTaskSummary" class="toggle-checkbox" checked>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- 测试连接 -->
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium mb-4">测试连接</h3>
+                    <button type="button" 
+                            onclick="testAIConnection()"
+                            class="windows-button-secondary px-4 py-2">
+                        <i class="fas fa-plug mr-2"></i>测试连接
+                    </button>
+                    <div id="aiTestResult" class="mt-3 text-sm"></div>
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <button type="button" 
+                            onclick="hideAIConfigModal()"
+                            class="windows-button-secondary px-4 py-2">
+                        取消
+                    </button>
+                    <button type="submit" class="windows-button px-4 py-2">
+                        保存配置
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- AI助手 -->
+    <div id="aiAssistant" class="fixed bottom-4 right-4 z-50">
+        <!-- AI助手按钮 -->
+        <button id="aiAssistantBtn" 
+                class="ai-assistant-btn"
+                onclick="toggleAIAssistant()">
+            <i class="fas fa-robot"></i>
+        </button>
+        
+        <!-- AI助手面板 -->
+        <div id="aiAssistantPanel" class="ai-assistant-panel">
+            <!-- AI助手头部 -->
+            <div class="ai-assistant-header">
+                <div class="flex items-center space-x-3">
+                    <div class="ai-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div>
+                        <h3 class="ai-assistant-title">AI助手</h3>
+                        <p class="ai-assistant-status">在线 · 随时为您服务</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <button class="ai-clear-btn" onclick="clearConversationHistory()" title="清空对话历史">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="ai-close-btn" onclick="toggleAIAssistant()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 聊天消息区域 -->
+            <div id="aiChatMessages" class="ai-chat-messages">
+                <div class="ai-message ai-message-assistant">
+                    <div class="ai-avatar-small">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="ai-message-content">
+                        <p>你好！我是你的AI助手 👋</p>
+                        <p>我可以帮助你管理任务，比如：</p>
+                        <ul class="ai-suggestions">
+                            <li>创建新任务</li>
+                            <li>查找特定任务</li>
+                            <li>管理任务优先级</li>
+                            <li>提供任务建议</li>
+                        </ul>
+                        <p>有什么可以帮助你的吗？</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 输入区域 -->
+            <div class="ai-input-area">
+                <div class="ai-input-container">
+                    <input type="text" 
+                           id="aiInput" 
+                           class="ai-input" 
+                           placeholder="问我任何关于任务管理的问题..."
+                           onkeypress="handleAIInput(event)">
+                    <button class="ai-voice-btn" id="aiVoiceBtn" onclick="toggleVoiceInput()" title="语音输入">
+                        <i class="fas fa-microphone"></i>
+                    </button>
+                    <button class="ai-send-btn" onclick="sendAIMessage()">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
+                
+                <!-- 快捷操作按钮 -->
+                <div class="ai-quick-actions">
+                    <button class="ai-quick-btn" onclick="handleQuickAction('create')">
+                        <i class="fas fa-plus"></i>
+                        创建任务
+                    </button>
+                    <button class="ai-quick-btn" onclick="handleQuickAction('find')">
+                        <i class="fas fa-search"></i>
+                        查找任务
+                    </button>
+                    <button class="ai-quick-btn" onclick="handleQuickAction('summary')">
+                        <i class="fas fa-chart-pie"></i>
+                        任务总结
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 滑动侧边栏遮罩层 -->
+    <div class="sliding-sidebar-overlay" id="slidingSidebarOverlay" onclick="toggleMoreMenu()"></div>
+
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden fade-in">
+        <div class="flex items-center">
+            <i class="fas fa-check-circle mr-2"></i>
+            <span id="notificationText">操作成功</span>
+        </div>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

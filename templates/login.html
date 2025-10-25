@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - Microsoft To Do</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            width: 900px;
+            height: 550px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        /* 左侧英雄区域 */
+        .hero-section {
+            flex: 1;
+            background: linear-gradient(135deg, #0078d4, #4080ff);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .hero-content {
+            text-align: center;
+            color: white;
+            z-index: 2;
+            padding: 20px;
+        }
+
+        .hero-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .hero-pattern {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+            animation: patternMove 20s ease-in-out infinite;
+        }
+
+        /* 右侧登录区域 */
+        .login-section {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            overflow: hidden;
+        }
+
+        .login-form {
+            width: 100%;
+            max-width: 350px;
+            opacity: 0;
+            transform: translateX(50px);
+            animation: slideInFromRight 0.8s ease-out forwards;
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translateX(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* 表单元素渐进动画 */
+        .login-form h1 {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out 0.2s forwards;
+        }
+
+        .login-form .subtitle {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out 0.3s forwards;
+        }
+
+        .login-form .input-group {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .login-form .input-group:nth-child(4) { animation-delay: 0.4s; }
+        .login-form .input-group:nth-child(5) { animation-delay: 0.5s; }
+
+        .login-form .options {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out 0.6s forwards;
+        }
+
+        .login-form .login-btn {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out 0.7s forwards;
+        }
+
+        .login-form .divider {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out 0.8s forwards;
+        }
+
+        .login-form .signup-prompt {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.6s ease-out 0.9s forwards;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* 悬停时的微动画 */
+        .login-form .input-group:hover {
+            transform: translateY(-2px);
+            transition: transform 0.3s ease;
+        }
+
+        .login-form .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 120, 212, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        /* 输入框聚焦时的滑动效果 */
+        .login-form .input-group input:focus {
+            transform: scale(1.02);
+            transition: transform 0.3s ease;
+        }
+
+        .login-form h1 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.9rem;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 15px;
+            border: 1.5px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #0078d4;
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+        }
+
+        .options {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 0.9rem;
+        }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .remember-me input {
+            margin-right: 8px;
+        }
+
+        .forgot-password {
+            color: #0078d4;
+            text-decoration: none;
+        }
+
+        .forgot-password:hover {
+            text-decoration: underline;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: #0078d4;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .login-btn:hover {
+            background-color: #106ebe;
+        }
+
+        .login-btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #999;
+            position: relative;
+        }
+
+        .divider::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background-color: #e1e1e1;
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 15px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .signup-prompt {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .signup-prompt a {
+            color: #0078d4;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .signup-prompt a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background-color: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* 输入框错误状态 */
+        .input-group.error input {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
+        }
+
+        .input-group.error .field-error {
+            color: #dc3545;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-group.error .field-error i {
+            margin-right: 5px;
+            font-size: 0.7rem;
+        }
+
+        /* 输入框成功状态 */
+        .input-group.success input {
+            border-color: #0078d4;
+            box-shadow: 0 0 0 3px rgba(0, 120, 212, 0.1);
+        }
+
+        /* 占位符错误状态 */
+        .input-group.error input::placeholder {
+            color: #dc3545;
+            opacity: 0.8;
+        }
+
+        /* 动画效果 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes patternMove {
+            0%, 100% { transform: translate(0px, 0px) rotate(0deg); }
+            33% { transform: translate(-10px, -10px) rotate(1deg); }
+            66% { transform: translate(10px, -5px) rotate(-1deg); }
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                width: 95%;
+                height: auto;
+                margin: 20px 0;
+            }
+
+            .hero-section {
+                flex: none;
+                height: 200px;
+                width: 100%;
+            }
+
+            .login-section {
+                flex: none;
+                width: 100%;
+                padding: 30px 20px;
+            }
+
+            .hero-title {
+                font-size: 1.5rem;
+            }
+
+            .hero-icon {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧动画展示区 -->
+        <div class="hero-section">
+            <div class="hero-pattern"></div>
+            <div class="hero-content">
+                <div class="hero-icon">
+                    <i class="fas fa-tasks"></i>
+                </div>
+                <h1 class="hero-title">Microsoft To Do</h1>
+                <p class="hero-subtitle">高效管理您的任务</p>
+            </div>
+        </div>
+
+        <!-- 右侧登录表单区 -->
+        <div class="login-section">
+            <form class="login-form" id="loginForm">
+                <h1>欢迎回来！</h1>
+                <p class="subtitle">请输入您的登录信息</p>
+
+                <div class="error-message" id="errorMessage"></div>
+                <div class="success-message" id="successMessage"></div>
+
+                <div class="input-group">
+                    <label for="username">用户名或邮箱</label>
+                    <input type="text" id="username" name="username" placeholder="请输入用户名或邮箱" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">密码</label>
+                    <input type="password" id="password" name="password" placeholder="请输入密码" required>
+                </div>
+
+                <div class="options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember">
+                        <span>记住我30天</span>
+                    </label>
+                    <a href="#" class="forgot-password">忘记密码？</a>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <span id="loginBtnText">登录</span>
+                    <i class="fas fa-spinner fa-spin" id="loginSpinner" style="display: none;"></i>
+                </button>
+
+                <div class="divider">
+                    <span>或</span>
+                </div>
+
+                <p class="signup-prompt">
+                    还没有账户？ <a href="/register">立即注册</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // 清除所有字段错误状态
+        function clearFieldErrors() {
+            document.querySelectorAll('.input-group').forEach(group => {
+                group.classList.remove('error', 'success');
+                const errorDiv = group.querySelector('.field-error');
+                if (errorDiv) {
+                    errorDiv.remove();
+                }
+            });
+        }
+
+        // 设置字段错误状态
+        function setFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const inputGroup = field.closest('.input-group');
+            
+            // 清除之前的错误
+            inputGroup.classList.remove('success');
+            inputGroup.classList.add('error');
+            
+            // 移除之前的错误消息
+            const existingError = inputGroup.querySelector('.field-error');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            // 添加错误消息
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'field-error';
+            errorDiv.innerHTML = `<i class="fas fa-exclamation-circle"></i>${message}`;
+            inputGroup.appendChild(errorDiv);
+            
+            // 更新占位符
+            field.placeholder = message;
+        }
+
+        // 设置字段成功状态
+        function setFieldSuccess(fieldId) {
+            const field = document.getElementById(fieldId);
+            const inputGroup = field.closest('.input-group');
+            
+            inputGroup.classList.remove('error');
+            inputGroup.classList.add('success');
+            
+            // 移除错误消息
+            const errorDiv = inputGroup.querySelector('.field-error');
+            if (errorDiv) {
+                errorDiv.remove();
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const remember = document.querySelector('input[name="remember"]').checked;
+            
+            console.log('登录表单提交:', { username: username, password: password ? '***' : 'empty' });
+            
+            // 清除之前的错误状态
+            clearFieldErrors();
+            hideMessages();
+            
+            let hasError = false;
+            
+            // 验证用户名
+            if (!username || username.length === 0) {
+                console.log('用户名验证失败');
+                setFieldError('username', '用户名或邮箱不能为空');
+                hasError = true;
+            } else {
+                console.log('用户名验证通过');
+                setFieldSuccess('username');
+            }
+            
+            // 验证密码
+            if (!password || password.length === 0) {
+                console.log('密码验证失败');
+                setFieldError('password', '密码不能为空');
+                hasError = true;
+            } else {
+                console.log('密码验证通过');
+                setFieldSuccess('password');
+            }
+            
+            if (hasError) {
+                console.log('表单验证失败，停止提交');
+                return;
+            }
+            
+            console.log('表单验证通过，开始登录请求');
+            
+            // 显示加载状态
+            setLoading(true);
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password,
+                        remember: remember
+                    })
+                });
+                
+                const data = await response.json();
+                console.log('登录响应:', data);
+                
+                if (response.ok && data.success) {
+                    showSuccess('登录成功！正在跳转...');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    // 处理服务器返回的特定字段错误
+                    if (data.field && data.message) {
+                        setFieldError(data.field, data.message);
+                    } else {
+                        showError(data.error || '登录失败，请检查用户名和密码');
+                    }
+                }
+            } catch (error) {
+                console.error('登录错误:', error);
+                showError('网络错误，请稍后重试');
+            } finally {
+                setLoading(false);
+            }
+        });
+        
+        // 输入时清除错误状态
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', function() {
+                console.log('输入事件触发:', this.id, this.value);
+                const inputGroup = this.closest('.input-group');
+                if (inputGroup.classList.contains('error')) {
+                    console.log('清除错误状态:', this.id);
+                    inputGroup.classList.remove('error');
+                    const errorDiv = inputGroup.querySelector('.field-error');
+                    if (errorDiv) {
+                        errorDiv.remove();
+                    }
+                    // 恢复原始占位符
+                    const originalPlaceholders = {
+                        'username': '请输入用户名或邮箱',
+                        'password': '请输入密码'
+                    };
+                    this.placeholder = originalPlaceholders[this.id] || '';
+                }
+            });
+        });
+
+        // 页面加载完成后清除所有错误状态
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，清除所有错误状态');
+            clearFieldErrors();
+            hideMessages();
+        });
+        
+        function setLoading(loading) {
+            const btn = document.getElementById('loginBtn');
+            const btnText = document.getElementById('loginBtnText');
+            const spinner = document.getElementById('loginSpinner');
+            
+            if (loading) {
+                btn.disabled = true;
+                btnText.style.display = 'none';
+                spinner.style.display = 'inline-block';
+            } else {
+                btn.disabled = false;
+                btnText.style.display = 'inline';
+                spinner.style.display = 'none';
+            }
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+        
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+        
+        function hideMessages() {
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('successMessage').style.display = 'none';
+        }
+        
+        // 忘记密码链接处理
+        document.querySelector('.forgot-password').addEventListener('click', function(e) {
+            e.preventDefault();
+            showError('密码重置功能开发中，请联系管理员');
+        });
+    </script>
+</body>
+</html>

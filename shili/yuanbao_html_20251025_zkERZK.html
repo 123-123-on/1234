@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Login Page</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 如果需要图标，可以引入图标库，如 Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧动画展示区 -->
+        <div class="hero-section">
+            <!-- 方式1：使用GIF/APNG实现简单动画 -->
+            <img src="animated-characters.gif" alt="Animated Characters" class="hero-image">
+            <!-- 方式2：使用视频循环播放（更高级，文件可能更小） -->
+            <!-- <video class="hero-video" autoplay muted loop playsinline>
+                <source src="animated-characters-loop.mp4" type="video/mp4">
+            </video> -->
+        </div>
+
+        <!-- 右侧登录表单区 -->
+        <div class="login-section">
+            <form class="login-form">
+                <h1>Welcome back!</h1>
+                <p class="subtitle">Please enter your details</p>
+
+                <div class="input-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                </div>
+
+                <div class="options">
+                    <label class="remember-me">
+                        <input type="checkbox" name="remember">
+                        <span>Remember for 30 days</span>
+                    </label>
+                    <a href="#" class="forgot-password">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="login-btn">Log In</button>
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <button type="button" class="google-login-btn">
+                    <!-- 这里可以用Google的G图标，或者用Font Awesome -->
+                    <i class="fab fa-google"></i> 
+                    Log in with Google
+                </button>
+
+                <p class="signup-prompt">
+                    Don't have an account? <a href="#">Sign Up</a>
+                </p>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,51 @@
+{
+  "assistant": {
+    "name": "AI助手",
+    "version": "1.0.0",
+    "model": "gpt-3.5-turbo",
+    "provider": "zhipu",
+    "api_key": "test-key-123",
+    "api_base": "https://api.openai.com/v1",
+    "max_tokens": 500,
+    "temperature": 0.7,
+    "system_prompt": "你是一个专业的任务管理AI助手，帮助用户高效管理他们的待办事项。你的任务是：\n1. 帮助用户创建、编辑和管理任务\n2. 提供任务优先级建议\n3. 协助制定时间管理计划\n4. 回答任务管理相关的问题\n5. 提供提高效率的建议\n\n请用友好、专业的语调回复，回复要简洁有用。如果用户询问任务相关的信息，你可以基于当前的任务数据回答。",
+    "welcome_message": "你好！我是你的AI助手 👋\n我可以帮助你管理任务，比如：\n• 创建新任务\n• 查找特定任务\n• 管理任务优先级\n• 提供任务建议\n\n有什么可以帮助你的吗？",
+    "typing_delay": {
+      "min": 1000,
+      "max": 2000
+    },
+    "mode": "smart",
+    "timeout": 30,
+    "retries": 3,
+    "stream_response": false,
+    "save_history": true
+  },
+  "features": {
+    "task_creation": true,
+    "task_search": {
+      "enabled": true,
+      "fuzzy_search": true,
+      "search_fields": [
+        "title",
+        "description"
+      ]
+    },
+    "task_summary": true,
+    "time_management": true,
+    "task_categorization": true,
+    "priority_suggestion": true
+  },
+  "ui": {
+    "theme": "auto",
+    "position": "bottom-right",
+    "auto_open": false,
+    "sound_enabled": false,
+    "animations_enabled": true
+  },
+  "advanced": {
+    "context_memory": 10,
+    "cache_responses": true,
+    "debug_mode": false,
+    "fallback_to_rules": true
+  }
+}
